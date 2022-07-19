@@ -5,7 +5,7 @@ import Exif from './components/Exif'
 function App() {
   return (
     <div className="App">
-      <Exif/>
+      <Dropzone/>
     </div>
   );
 }

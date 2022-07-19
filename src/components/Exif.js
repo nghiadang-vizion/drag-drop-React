@@ -11,17 +11,11 @@ const ImgExif = ({ src, ...props }) => {
   image.src = src;
   loadImage(src, { maxWidth: 600, meta: true })
   .then(function (data) {
-    var p =document.createElement('span');
-    // document.body.appendChild(data.image);
-    p.innerHTML = data.originalWidth;
     console.log('Original image width: ', data.originalWidth);
     console.log('Original image height: ', data.originalHeight);
-    return (
-      <span>ALo</span>
-    )
+    // console.log('Exif data: ', data.exif) // requires exif extension
   })
   .catch(function (err) {
-    // Handling image loading errors
     console.log(err)
   })
 };
@@ -33,11 +27,11 @@ function Exif() {
   const maxNumber = 69;
   const onChange = (imageList, addUpdateIndex) => {
     // data for submit
-    // console.log(imageList, addUpdateIndex);
+    console.log('alo');
     setImages(imageList);
   };
 
-  // console.log(images);
+  console.log(images);
 
   return (
     <div className="App">
