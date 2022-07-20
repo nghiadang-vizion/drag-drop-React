@@ -57,6 +57,79 @@ const img = {
 
 let newArr = [];
 
+const maxLength = 20;
+
+function nameLengthValidator(file) {
+  if (file.name.length > maxLength) {
+    return {
+      code: "name-too-large",
+      message: `Name is larger than ${maxLength} characters`,
+    };
+  }
+
+  return null;
+}
+
+async function ImgExif(src) {
+  const image = new Image();
+  image.src = src;
+
+  try {
+    const data = await loadImage(src, { maxWidth: 600, meta: true });
+    const width = data.originalWidth;
+    const height = data.originalHeight;
+    const photoDay = data.exif.get("306");
+    const info = { height, width, photoDay };
+    // console.log(info);
+    // console.log("data",data);
+    return info;
+  } catch (err) {
+    // console.log(err);
+    return null;
+  }
+}
+
+async function acceptedFileItems(newArr) {
+  const arr = [];
+
+  for (const element of newArr) {
+    let file = element;
+    let fileInfo = await ImgExif(file.preview);
+    // console.log("exif info:", fileInfo);
+    console.log("file info", file);
+    let merInfo = {...file,...fileInfo}
+    console.log("mer info", merInfo);
+    arr.push(merInfo);
+  }
+
+  return arr;
+  // const imgInfo = ImgExif(src)
+  // return newArr.map((file) => (
+  //   console.log(file)
+  // <li key={file.path}>
+  //   <div>
+  //     <div style={thumb} key={file.name}>
+  //       <div style={thumbInner}>
+  //         <img
+  //           src={file.preview}
+  //           style={img}
+  //           onLoad={() => {
+  //             URL.revokeObjectURL(file.preview);
+  //           }}
+  //         />
+  //       </div>
+  //     </div>
+  //     <div className="info">
+  //       <span>Name: {file.path}</span>
+  //       <span>Size: {file.size} bytes</span>
+  //       <span>Type: {file.type}</span>
+  //       <span>Date: {file.lastModifiedDate.toLocaleDateString()}</span>
+  //     </div>
+  //   </div>
+  // </li>
+  // ));
+}
+
 function Dropzone() {
   const [files, setFiles] = useState([]);
   const {
@@ -67,6 +140,7 @@ function Dropzone() {
     isDragReject,
     acceptedFiles,
     fileRejections,
+    open,
   } = useDropzone({
     accept: {
       "image/*": [],
@@ -74,6 +148,7 @@ function Dropzone() {
       "video/mp4": [".mp4"],
     },
     noClick: true,
+    // validator: nameLengthValidator,
     onDrop: (acceptedFiles) => {
       setFiles(
         acceptedFiles.map((file) =>
@@ -83,6 +158,8 @@ function Dropzone() {
         )
       );
       newArr = newArr.concat(acceptedFiles);
+
+      console.log(newArr);
     },
   });
 
@@ -96,63 +173,16 @@ function Dropzone() {
     [isFocused, isDragAccept, isDragReject]
   );
 
+  // const abc = await acceptedFileItems(newArr);
+
+  const [abcs, setAbcs] = useState([]);
   useEffect(() => {
-    return () => files.forEach((file) => URL.revokeObjectURL(file.preview));
-  }, []);
-
-  // console.log(newArr);
-
-  // const ImgExif = ({ src, ...props }) => {
-  //   const image = new Image();
-  //   image.src = src;
-  //   loadImage(
-  //     src,
-  //     (img, data) => {
-  //       console.log("OG Height", data.originalHeight);
-  //       console.log("OG width", data.originalWidth);
-
-  //       const photoDate = data.exif.get("306");
-  //       console.log("Photo date:", photoDate);
-
-  //       const takeBy = data.exif.get("272");
-  //       console.log("Device:", takeBy);
-        
-  //       console.log(data.exif);
-  //       return (
-  //         <span>{img}</span>
-  //       )
-  //     },
-  //     { meta: true }
-  //   );
-  // };
-
-  const acceptedFileItems = newArr.map((file) => (
-    <li key={file.path}>
-      {/* <ImgExif src={file.preview} /> */}
-      <div>
-        <div style={thumb} key={file.name}>
-          <div style={thumbInner}>
-            <img
-              src={file.preview}
-              style={img}
-              onLoad={() => {
-                URL.revokeObjectURL(file.preview);
-              }}
-            />
-          </div>
-        </div>
-        <div className="info">
-          <span>Name: {file.path}</span>
-          <span>Size: {file.size} bytes</span>
-          <span>Type: {file.type}</span>
-          <span>Date: {file.lastModifiedDate.toLocaleDateString()}</span>
-        </div>
-      </div>
-    </li>
-  ));
-
-
-
+    acceptedFileItems(newArr).then((merInfo) => {
+      console.log(merInfo);
+      return setAbcs(merInfo);
+    });
+  }, [newArr]);
+  console.log(abcs);
   const fileRejectionItems = fileRejections.map(({ file, errors }) =>
     errors.map((e) => <h2 key={e.code}>{e.message}</h2>)
   );
@@ -160,10 +190,16 @@ function Dropzone() {
   return (
     <div className="container">
       <h1>Drag and drop your files here !</h1>
+      <button type="button" onClick={open}>
+        Upload
+      </button>
       <div {...getRootProps({ style })}>
-        <input {...getInputProps()}/>
+        <input {...getInputProps()} />
         <aside>
-          <ul>{acceptedFileItems}</ul>
+          {/* <ul>{setAbc}</ul> */}
+          {abcs.map((abc, index) => (
+            <h1 key={index}>{abc.height}</h1>
+          ))}
           <ul>{fileRejectionItems}</ul>
         </aside>
       </div>
@@ -172,3 +208,10 @@ function Dropzone() {
 }
 
 export default Dropzone;
+
+{
+  /* <ImgExif src={file.preview} /> */
+}
+{
+  /* <span>{imgInfo(file.preview)}</span> */
+}
