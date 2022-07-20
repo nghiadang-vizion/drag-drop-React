@@ -96,8 +96,8 @@ async function acceptedFileItems(newArr) {
     let file = element;
     let fileInfo = await ImgExif(file.preview);
     // console.log("exif info:", fileInfo);
-    console.log("file info", file);
-    let merInfo = {...file,...fileInfo}
+    // console.log("file info", file);
+    let merInfo = Object.assign(file, fileInfo)
     console.log("mer info", merInfo);
     arr.push(merInfo);
   }
@@ -197,9 +197,32 @@ function Dropzone() {
         <input {...getInputProps()} />
         <aside>
           {/* <ul>{setAbc}</ul> */}
-          {abcs.map((abc, index) => (
-            <h1 key={index}>{abc.height}</h1>
-          ))}
+          <ul>
+            {abcs.map((abc, index) => (
+              <li key={index}>
+                <div>
+                  <div style={thumb} key={abc.name}>
+                    <div style={thumbInner}>
+                      <img
+                        src={abc.preview}
+                        style={img}
+                        onLoad={() => {
+                          URL.revokeObjectURL(abc.preview);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <div className="info">
+                    <span>Name: {abc.path}</span>
+                    <span>Size: {abc.size} bytes</span>
+                    <span>Type: {abc.type}</span>
+                    <span>H/W: {abc.height}x{abc.width}</span>
+                    <span>Take day: {abc.photoDay}</span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
           <ul>{fileRejectionItems}</ul>
         </aside>
       </div>
@@ -215,3 +238,4 @@ export default Dropzone;
 {
   /* <span>{imgInfo(file.preview)}</span> */
 }
+// <h1 key={index}>{abc.height}</h1>
