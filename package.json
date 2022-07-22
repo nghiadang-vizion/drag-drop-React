@@ -11,6 +11,7 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^0.27.2",
     "blueimp-load-image": "^5.16.0",
+    "cors": "^2.8.5",
     "css-loader": "^6.7.1",
     "dropzone": "^6.0.0-beta.2",
     "exif-js": "^2.3.0",

@@ -54,6 +54,7 @@ img{
   display: flex;
   justify-content: center;
   align-items: center;
+  pointer-events: none;
 }
 
 li div .info{

@@ -57,18 +57,6 @@ const img = {
 
 let newArr = [];
 
-const maxLength = 20;
-
-function nameLengthValidator(file) {
-  if (file.name.length > maxLength) {
-    return {
-      code: "name-too-large",
-      message: `Name is larger than ${maxLength} characters`,
-    };
-  }
-
-  return null;
-}
 
 async function ImgExif(src) {
   const image = new Image();
@@ -80,14 +68,43 @@ async function ImgExif(src) {
     const height = data.originalHeight;
     const photoDay = data.exif.get("306");
     const info = { height, width, photoDay };
-    // console.log(info);
-    // console.log("data",data);
+    
     return info;
   } catch (err) {
-    // console.log(err);
     return null;
   }
 }
+
+
+function handleConvertValidFormatDatetime(input){
+
+  let date = input.slice(0, 10);
+  let time = input.slice(11, 19);
+  let replaceDate = date.replaceAll(":", "-");
+
+  return new Date(replaceDate + " " + time);
+}
+
+function padTo2Digits(num) {
+  return num.toString().padStart(2, '0');
+}
+
+function formatDate(date) {
+  return (
+    [
+      date.getFullYear(),
+      padTo2Digits(date.getMonth() + 1),
+      padTo2Digits(date.getDate()),
+    ].join('-') +
+    ' ' +
+    [
+      padTo2Digits(date.getHours()),
+      padTo2Digits(date.getMinutes()),
+      padTo2Digits(date.getSeconds()),
+    ].join(':')
+  );
+}
+
 
 async function acceptedFileItems(newArr) {
   const arr = [];
@@ -95,42 +112,15 @@ async function acceptedFileItems(newArr) {
   for (const element of newArr) {
     let file = element;
     let fileInfo = await ImgExif(file.preview);
-    // console.log("exif info:", fileInfo);
-    // console.log("file info", file);
-    let merInfo = Object.assign(file, fileInfo)
-    console.log("mer info", merInfo);
+    let merInfo = Object.assign(file, fileInfo);
     arr.push(merInfo);
   }
 
   return arr;
-  // const imgInfo = ImgExif(src)
-  // return newArr.map((file) => (
-  //   console.log(file)
-  // <li key={file.path}>
-  //   <div>
-  //     <div style={thumb} key={file.name}>
-  //       <div style={thumbInner}>
-  //         <img
-  //           src={file.preview}
-  //           style={img}
-  //           onLoad={() => {
-  //             URL.revokeObjectURL(file.preview);
-  //           }}
-  //         />
-  //       </div>
-  //     </div>
-  //     <div className="info">
-  //       <span>Name: {file.path}</span>
-  //       <span>Size: {file.size} bytes</span>
-  //       <span>Type: {file.type}</span>
-  //       <span>Date: {file.lastModifiedDate.toLocaleDateString()}</span>
-  //     </div>
-  //   </div>
-  // </li>
-  // ));
 }
 
 function Dropzone() {
+
   const [files, setFiles] = useState([]);
   const {
     getRootProps,
@@ -140,7 +130,6 @@ function Dropzone() {
     isDragReject,
     acceptedFiles,
     fileRejections,
-    open,
   } = useDropzone({
     accept: {
       "image/*": [],
@@ -148,7 +137,6 @@ function Dropzone() {
       "video/mp4": [".mp4"],
     },
     noClick: true,
-    // validator: nameLengthValidator,
     onDrop: (acceptedFiles) => {
       setFiles(
         acceptedFiles.map((file) =>
@@ -158,8 +146,6 @@ function Dropzone() {
         )
       );
       newArr = newArr.concat(acceptedFiles);
-
-      console.log(newArr);
     },
   });
 
@@ -173,57 +159,94 @@ function Dropzone() {
     [isFocused, isDragAccept, isDragReject]
   );
 
-  // const abc = await acceptedFileItems(newArr);
-
-  const [abcs, setAbcs] = useState([]);
+  const [items, setitems] = useState([]);
   useEffect(() => {
     acceptedFileItems(newArr).then((merInfo) => {
-      console.log(merInfo);
-      return setAbcs(merInfo);
+      return setitems(merInfo);
     });
   }, [newArr]);
-  console.log(abcs);
-  const fileRejectionItems = fileRejections.map(({ file, errors }) =>
+  console.log("list items",items);
+  
+  const getfileRejection = fileRejections.map(({ file, errors }) =>
     errors.map((e) => <h2 key={e.code}>{e.message}</h2>)
   );
+  
+  useEffect(() => {
+    let requestOptions = {
+      method: "GET",
+      redirect: "follow",
+    };
+
+    fetch(
+      "https://server-upload-medias-testing.azurewebsites.net/api/Medias/file/002fc442-6370-441f-a5a0-b1192fade65b",
+      requestOptions
+    )
+      .then((response) => response.text())
+      .then((result) => console.log(result))
+      .catch((error) => console.log("error", error));
+  }, []);
+
+  function handleUploadFile() {
+    let myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    let raw = JSON.stringify({
+      FileName: items[0]?.path,
+      ExifData: `${items[0]?.height} ${items[0]?.width}`,
+      MediaDate: formatDate(handleConvertValidFormatDatetime(items[0]?.photoDay)),
+    });
+
+    let requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
+    console.log(raw);
+
+    fetch(
+      "https://server-upload-medias-testing.azurewebsites.net/api/Medias/Upload",
+      requestOptions
+    )
+      .then((response) => response.text())
+      .then((result) => console.log(result))
+      .catch((error) => console.log("error", error));
+  }
 
   return (
     <div className="container">
       <h1>Drag and drop your files here !</h1>
-      <button type="button" onClick={open}>
+      <button type="button" onClick={handleUploadFile}>
         Upload
       </button>
       <div {...getRootProps({ style })}>
         <input {...getInputProps()} />
         <aside>
-          {/* <ul>{setAbc}</ul> */}
-          <ul>
-            {abcs.map((abc, index) => (
-              <li key={index}>
-                <div>
-                  <div style={thumb} key={abc.name}>
-                    <div style={thumbInner}>
-                      <img
-                        src={abc.preview}
-                        style={img}
-                        onLoad={() => {
-                          URL.revokeObjectURL(abc.preview);
-                        }}
-                      />
+          <form method="post" action="#">
+            <ul>
+              {items.map((abc, index) => (
+                <li key={index}>
+                  <div>
+                    <div style={thumb} key={abc.name}>
+                      <div style={thumbInner}>
+                        <img src={abc.preview} style={img} />
+                      </div>
+                    </div>
+                    <div className="info">
+                      <span>Name: {abc.path}</span>
+                      <span>Size: {abc.size} bytes</span>
+                      <span>Type: {abc.type}</span>
+                      <span>
+                        H/W: {abc.height} x {abc.width}
+                      </span>
+                      <span>Take day: {abc.photoDay}</span>
                     </div>
                   </div>
-                  <div className="info">
-                    <span>Name: {abc.path}</span>
-                    <span>Size: {abc.size} bytes</span>
-                    <span>Type: {abc.type}</span>
-                    <span>H/W: {abc.height}x{abc.width}</span>
-                    <span>Take day: {abc.photoDay}</span>
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-          <ul>{fileRejectionItems}</ul>
+                </li>
+              ))}
+            </ul>
+          </form>
+          <ul>{getfileRejection}</ul>
         </aside>
       </div>
     </div>
@@ -231,11 +254,3 @@ function Dropzone() {
 }
 
 export default Dropzone;
-
-{
-  /* <ImgExif src={file.preview} /> */
-}
-{
-  /* <span>{imgInfo(file.preview)}</span> */
-}
-// <h1 key={index}>{abc.height}</h1>
